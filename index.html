@@ -4,62 +4,85 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pequod02</title>
-    <meta
-      name="description"
-      content="Acceso privado a la web del velero Pequod02."
-    >
+    <meta name="description" content="Acceso privado a Pequod02.">
     <link rel="stylesheet" href="src/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="src/app.js" defer></script>
   </head>
   <body>
-    <main class="login-page">
-      <section class="login-shell" aria-labelledby="login-title">
-        <div class="mark" aria-hidden="true">
-          <span class="mark-ring"></span>
-          <span class="mark-needle"></span>
+    <main id="auth-view" class="auth-view">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="compass" aria-hidden="true">
+          <span></span>
         </div>
 
-        <p class="kicker">Velero</p>
+        <p class="overline">Acceso privado</p>
         <h1 id="login-title">Pequod02</h1>
 
-        <form class="login-form" action="#" method="post">
-          <label for="email">Usuario</label>
-          <input
-            id="email"
-            name="email"
-            type="text"
-            autocomplete="username"
-            placeholder="usuario"
-            required
-          >
+        <form id="login-form" class="login-form">
+          <div class="field">
+            <label for="email">Usuario</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              placeholder="tripulante@pequod02"
+              required
+            >
+          </div>
 
-          <label for="password">Contraseña</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="contraseña"
-            required
-          >
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="contraseña"
+              required
+            >
+          </div>
 
-          <button class="submit-button" type="submit">Entrar</button>
+          <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+          <button id="login-button" class="primary-button" type="submit">Entrar</button>
         </form>
+      </section>
+    </main>
 
-        <div class="divider" aria-hidden="true">
-          <span></span>
-          <b>o</b>
-          <span></span>
+    <main id="dashboard-view" class="dashboard-view" hidden>
+      <header class="topbar">
+        <div>
+          <p class="overline">Panel de tripulación</p>
+          <h1>Pequod02</h1>
         </div>
+        <button id="logout-button" class="ghost-button" type="button">Salir</button>
+      </header>
 
-        <button class="google-button" type="button">
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path fill="#4285f4" d="M22.6 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6c-.3 1.4-1 2.6-2.1 3.4v2.8h3.5c2-1.9 3.2-4.6 3.2-8.3z"/>
-            <path fill="#34a853" d="M12 23c2.9 0 5.4-1 7.2-2.6l-3.5-2.8c-1 .7-2.2 1-3.7 1-2.8 0-5.2-1.9-6-4.5H2.4V17c1.8 3.6 5.5 6 9.6 6z"/>
-            <path fill="#fbbc05" d="M6 14.1c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V7H2.4C1.5 8.5 1 10.2 1 12s.5 3.5 1.4 5L6 14.1z"/>
-            <path fill="#ea4335" d="M12 5.4c1.6 0 3 .5 4.1 1.6l3.1-3.1C17.4 2.1 14.9 1 12 1 7.9 1 4.2 3.4 2.4 7L6 9.9c.8-2.6 3.2-4.5 6-4.5z"/>
-          </svg>
-          Entrar con Google
-        </button>
+      <section class="dashboard-grid" aria-label="Secciones">
+        <article class="section-card">
+          <span>01</span>
+          <h2>Regatas</h2>
+          <p>Calendario, convocatorias, instrucciones y preparación de competición.</p>
+        </article>
+
+        <article class="section-card">
+          <span>02</span>
+          <h2>Mantenimiento</h2>
+          <p>Trabajos, revisiones, reparaciones pendientes e historial técnico.</p>
+        </article>
+
+        <article class="section-card">
+          <span>03</span>
+          <h2>Academia</h2>
+          <p>Manuales, procedimientos, seguridad y formación para tripulantes.</p>
+        </article>
+
+        <article class="section-card">
+          <span>04</span>
+          <h2>Documentos</h2>
+          <p>PDFs, listas, fichas del barco y documentación operativa.</p>
+        </article>
       </section>
     </main>
   </body>
