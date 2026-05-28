@@ -6,61 +6,60 @@
     <title>Pequod02</title>
     <meta
       name="description"
-      content="Web del barco de vela Pequod02: regatas, mantenimiento, academia y herramientas para tripulantes."
+      content="Acceso privado a la web del velero Pequod02."
     >
     <link rel="stylesheet" href="src/styles.css">
   </head>
   <body>
-    <header class="site-header">
-      <a class="brand" href="#">Pequod02</a>
-      <nav class="nav" aria-label="Navegacion principal">
-        <a href="#regatas">Regatas</a>
-        <a href="#mantenimiento">Mantenimiento</a>
-        <a href="#academia">Academia</a>
-        <a href="#tripulacion">Tripulacion</a>
-      </nav>
-    </header>
-
-    <main>
-      <section class="hero">
-        <div class="hero-content">
-          <p class="eyebrow">Barco de vela Pequod02</p>
-          <h1>Pequod02</h1>
-          <p class="lead">
-            Punto de trabajo para regatas, documentacion tecnica, formacion y
-            herramientas internas de la tripulacion.
-          </p>
-          <div class="actions" aria-label="Acciones principales">
-            <a class="button primary" href="#regatas">Ver regatas</a>
-            <a class="button secondary" href="#academia">Abrir academia</a>
-          </div>
+    <main class="login-page">
+      <section class="login-shell" aria-labelledby="login-title">
+        <div class="mark" aria-hidden="true">
+          <span class="mark-ring"></span>
+          <span class="mark-needle"></span>
         </div>
-      </section>
 
-      <section class="overview" aria-label="Secciones principales">
-        <article class="panel" id="regatas">
-          <span class="panel-label">01</span>
-          <h2>Regatas</h2>
-          <p>Calendario, instrucciones en PDF y meteorologia de Puertos del Estado.</p>
-        </article>
+        <p class="kicker">Velero</p>
+        <h1 id="login-title">Pequod02</h1>
 
-        <article class="panel" id="mantenimiento">
-          <span class="panel-label">02</span>
-          <h2>Mantenimiento</h2>
-          <p>Seguimiento de reparaciones, incidencias, tareas abiertas e historico del barco.</p>
-        </article>
+        <form class="login-form" action="#" method="post">
+          <label for="email">Usuario</label>
+          <input
+            id="email"
+            name="email"
+            type="text"
+            autocomplete="username"
+            placeholder="usuario"
+            required
+          >
 
-        <article class="panel" id="academia">
-          <span class="panel-label">03</span>
-          <h2>Academia</h2>
-          <p>Manuales de navegacion, procedimientos y material de aprendizaje para tripulantes.</p>
-        </article>
+          <label for="password">Contraseña</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="contraseña"
+            required
+          >
 
-        <article class="panel" id="tripulacion">
-          <span class="panel-label">04</span>
-          <h2>Agente IA</h2>
-          <p>Asistente para consultar documentacion interna y preparar actividad de a bordo.</p>
-        </article>
+          <button class="submit-button" type="submit">Entrar</button>
+        </form>
+
+        <div class="divider" aria-hidden="true">
+          <span></span>
+          <b>o</b>
+          <span></span>
+        </div>
+
+        <button class="google-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path fill="#4285f4" d="M22.6 12.2c0-.8-.1-1.6-.2-2.3H12v4.4h6c-.3 1.4-1 2.6-2.1 3.4v2.8h3.5c2-1.9 3.2-4.6 3.2-8.3z"/>
+            <path fill="#34a853" d="M12 23c2.9 0 5.4-1 7.2-2.6l-3.5-2.8c-1 .7-2.2 1-3.7 1-2.8 0-5.2-1.9-6-4.5H2.4V17c1.8 3.6 5.5 6 9.6 6z"/>
+            <path fill="#fbbc05" d="M6 14.1c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V7H2.4C1.5 8.5 1 10.2 1 12s.5 3.5 1.4 5L6 14.1z"/>
+            <path fill="#ea4335" d="M12 5.4c1.6 0 3 .5 4.1 1.6l3.1-3.1C17.4 2.1 14.9 1 12 1 7.9 1 4.2 3.4 2.4 7L6 9.9c.8-2.6 3.2-4.5 6-4.5z"/>
+          </svg>
+          Entrar con Google
+        </button>
       </section>
     </main>
   </body>
