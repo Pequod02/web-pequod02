@@ -35,7 +35,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -186,7 +187,8 @@ label {
   font-weight: 750;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 50px;
   padding: 0 14px;
@@ -201,7 +203,12 @@ input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
-input:focus {
+option {
+  color: var(--ink);
+}
+
+input:focus,
+select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2);
 }
@@ -215,6 +222,7 @@ input:focus {
 
 .primary-button,
 .ghost-button,
+.ghost-link,
 .google-button {
   min-height: 50px;
   border-radius: 6px;
@@ -307,15 +315,28 @@ input:focus {
   font-size: 40px;
 }
 
-.ghost-button {
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ghost-button,
+.ghost-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 96px;
   padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
   color: var(--white);
   background: rgba(255, 255, 255, 0.08);
+  text-decoration: none;
 }
 
-.ghost-button:hover {
+.ghost-button:hover,
+.ghost-link:hover {
   border-color: var(--gold);
 }
 
@@ -356,9 +377,198 @@ input:focus {
   color: var(--mist);
 }
 
+.admin-view {
+  overflow: auto;
+}
+
+.admin-topbar {
+  align-items: flex-start;
+}
+
+.admin-gate,
+.admin-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.admin-gate {
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 22, 40, 0.86);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.stat-card,
+.admin-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 22, 40, 0.86);
+  box-shadow: 0 24px 70px rgba(2, 8, 18, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.stat-card {
+  padding: 20px;
+}
+
+.stat-card span {
+  display: block;
+  color: var(--gold);
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stat-card p {
+  margin: 8px 0 0;
+  color: var(--mist);
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.7fr);
+  gap: 18px;
+}
+
+.admin-card {
+  padding: 24px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel-heading h2 {
+  margin: 3px 0 0;
+  font-size: 24px;
+}
+
+.admin-form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.form-row {
+  display: grid;
+  gap: 7px;
+}
+
+.small-button,
+.text-button {
+  min-height: 36px;
+  border-radius: 6px;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.small-button {
+  padding: 0 12px;
+}
+
+.text-button {
+  min-width: 70px;
+  margin-right: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.text-button.danger {
+  color: var(--error);
+}
+
+.inline-message {
+  min-height: 20px;
+  margin: 0;
+  color: var(--mist);
+  font-size: 14px;
+}
+
+.inline-message[data-state="error"] {
+  color: var(--error);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--white);
+}
+
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: var(--gold);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+td {
+  color: var(--mist);
+}
+
+td select {
+  min-width: 130px;
+}
+
+.files-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.files-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.files-list small {
+  color: rgba(255, 255, 255, 0.62);
+}
+
 @media (max-width: 980px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats-grid,
+  .admin-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -380,8 +590,21 @@ input:focus {
     flex-direction: column;
   }
 
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .ghost-button,
+  .ghost-link {
+    flex: 1;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .section-card {

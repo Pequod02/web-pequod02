@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administración | Pequod02</title>
+    <meta name="description" content="Panel privado de administración de Pequod02.">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="admin.js" defer></script>
+  </head>
+  <body>
+    <main class="dashboard-view admin-view">
+      <header class="topbar admin-topbar">
+        <div>
+          <p class="overline">Administración</p>
+          <h1>Pequod02</h1>
+        </div>
+        <nav class="topbar-actions" aria-label="Acciones">
+          <a class="ghost-link" href="../index.html">Panel</a>
+          <button id="logout-button" class="ghost-button" type="button">Salir</button>
+        </nav>
+      </header>
+
+      <section id="admin-gate" class="admin-gate" role="status" aria-live="polite">
+        Comprobando permisos de administrador...
+      </section>
+
+      <section id="admin-panel" class="admin-panel" hidden>
+        <section class="stats-grid" aria-label="Estadísticas básicas">
+          <article class="stat-card">
+            <span id="stat-users">0</span>
+            <p>Usuarios</p>
+          </article>
+          <article class="stat-card">
+            <span id="stat-admins">0</span>
+            <p>Admins</p>
+          </article>
+          <article class="stat-card">
+            <span id="stat-patrons">0</span>
+            <p>Patrones</p>
+          </article>
+          <article class="stat-card">
+            <span id="stat-files">0</span>
+            <p>Archivos</p>
+          </article>
+        </section>
+
+        <section class="admin-layout">
+          <article class="admin-card">
+            <div class="panel-heading">
+              <div>
+                <p class="overline">Usuarios</p>
+                <h2>Gestión de usuarios</h2>
+              </div>
+              <button id="refresh-users" class="small-button" type="button">Actualizar</button>
+            </div>
+
+            <form id="user-form" class="admin-form">
+              <div class="form-row">
+                <label for="user-id">ID Auth</label>
+                <input id="user-id" name="id" type="text" placeholder="uuid del usuario" required>
+              </div>
+              <div class="form-row">
+                <label for="user-email">Email</label>
+                <input id="user-email" name="email" type="email" placeholder="tripulante@pequod02.com" required>
+              </div>
+              <div class="form-row">
+                <label for="user-name">Nombre</label>
+                <input id="user-name" name="nombre" type="text" placeholder="Nombre visible">
+              </div>
+              <div class="form-row">
+                <label for="user-role">Rol</label>
+                <select id="user-role" name="rol">
+                  <option value="tripulante">Tripulante</option>
+                  <option value="patron">Patrón</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <button class="primary-button" type="submit">Guardar usuario</button>
+              <p id="user-message" class="inline-message" role="status" aria-live="polite"></p>
+            </form>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="admin-card">
+            <div class="panel-heading">
+              <div>
+                <p class="overline">Storage</p>
+                <h2>Archivos</h2>
+              </div>
+            </div>
+
+            <form id="upload-form" class="admin-form">
+              <div class="form-row">
+                <label for="file-input">Archivo</label>
+                <input id="file-input" name="file" type="file" required>
+              </div>
+              <button class="primary-button" type="submit">Subir archivo</button>
+              <p id="upload-message" class="inline-message" role="status" aria-live="polite"></p>
+            </form>
+
+            <ul id="files-list" class="files-list" aria-label="Archivos subidos"></ul>
+          </article>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

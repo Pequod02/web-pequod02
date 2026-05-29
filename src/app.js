@@ -1,13 +1,14 @@
-const SUPABASE_URL = "https://fcuvurcffsmjbokrgntm.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjdXZ1cmNmZnNtamJva3JnbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTc5NjUsImV4cCI6MjA5NTU3Mzk2NX0.3GM9Kcf4dTID_NpalhQNvz2TR3FsIML5u7KFtnM2wiA";
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(
+  window.PEQUOD02_SUPABASE.url,
+  window.PEQUOD02_SUPABASE.anonKey,
+);
 
 const authView = document.querySelector("#auth-view");
 const dashboardView = document.querySelector("#dashboard-view");
 const loginForm = document.querySelector("#login-form");
 const loginButton = document.querySelector("#login-button");
 const googleLoginButton = document.querySelector("#google-login-button");
+const adminLink = document.querySelector("#admin-link");
 const logoutButton = document.querySelector("#logout-button");
 const authMessage = document.querySelector("#auth-message");
 
@@ -17,9 +18,22 @@ function setLoading(isLoading) {
   loginButton.textContent = isLoading ? "Entrando..." : "Entrar";
 }
 
-function showDashboard(session) {
+async function showDashboard(session) {
   authView.hidden = Boolean(session);
   dashboardView.hidden = !session;
+
+  if (!session) {
+    adminLink.hidden = true;
+    return;
+  }
+
+  const { data } = await supabaseClient
+    .from("profiles")
+    .select("rol")
+    .eq("id", session.user.id)
+    .single();
+
+  adminLink.hidden = data?.rol !== "admin";
 }
 
 function showError(message) {
@@ -31,11 +45,11 @@ async function loadSession() {
 
   if (error) {
     showError("No se pudo comprobar la sesión.");
-    showDashboard(null);
+    await showDashboard(null);
     return;
   }
 
-  showDashboard(data.session);
+  await showDashboard(data.session);
 }
 
 loginForm.addEventListener("submit", async (event) => {
@@ -60,7 +74,7 @@ loginForm.addEventListener("submit", async (event) => {
   }
 
   loginForm.reset();
-  showDashboard(data.session);
+  await showDashboard(data.session);
 });
 
 googleLoginButton.addEventListener("click", async () => {
@@ -85,7 +99,7 @@ logoutButton.addEventListener("click", async () => {
   logoutButton.disabled = true;
   await supabaseClient.auth.signOut();
   logoutButton.disabled = false;
-  showDashboard(null);
+  await showDashboard(null);
 });
 
 supabaseClient.auth.onAuthStateChange((_event, session) => {

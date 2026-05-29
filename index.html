@@ -7,6 +7,7 @@
     <meta name="description" content="Acceso privado a Pequod02.">
     <link rel="stylesheet" href="src/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="src/config.js"></script>
     <script src="src/app.js" defer></script>
   </head>
   <body>
@@ -63,7 +64,10 @@
           <p class="overline">Panel de tripulación</p>
           <h1>Pequod02</h1>
         </div>
-        <button id="logout-button" class="ghost-button" type="button">Salir</button>
+        <div class="topbar-actions">
+          <a id="admin-link" class="ghost-link" href="src/admin.html" hidden>Admin</a>
+          <button id="logout-button" class="ghost-button" type="button">Salir</button>
+        </div>
       </header>
 
       <section class="dashboard-grid" aria-label="Secciones">
