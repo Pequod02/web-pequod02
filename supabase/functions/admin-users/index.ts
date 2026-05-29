@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const roles = new Set(["admin", "patron", "tripulante"]);
+const internalEmailDomain = "pequod02.local";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -32,6 +33,30 @@ function getBearerToken(req: Request) {
 function normalizeRole(value: unknown) {
   const role = String(value || "tripulante");
   return roles.has(role) ? role : null;
+}
+
+function isInternalEmail(email: string) {
+  return email.toLowerCase().endsWith(`@${internalEmailDomain}`);
+}
+
+function buildInternalEmail(username: string) {
+  const slug = username
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .slice(0, 48);
+
+  if (!slug) {
+    return null;
+  }
+
+  return `${slug}@${internalEmailDomain}`;
+}
+
+function publicEmail(email: string) {
+  return isInternalEmail(email) ? "" : email;
 }
 
 async function requireAdmin(req: Request, supabaseAdmin: ReturnType<typeof createClient>) {
@@ -123,12 +148,14 @@ Deno.serve(async (req) => {
 
         return {
           id: authUser.id,
-          email: authUser.email || profile?.email || "",
+          email: publicEmail(authUser.email || profile?.email || ""),
+          username: (authUser.email || "").split("@")[0],
           nombre: profile?.nombre || authUser.user_metadata?.name || authUser.user_metadata?.full_name || "",
           rol: profile?.rol || "tripulante",
           created_at: profile?.created_at || authUser.created_at,
           last_sign_in_at: authUser.last_sign_in_at,
           has_profile: Boolean(profile),
+          email_pending: isInternalEmail(authUser.email || profile?.email || ""),
         };
       });
 
@@ -137,13 +164,14 @@ Deno.serve(async (req) => {
 
     if (req.method === "POST") {
       const body = await req.json();
-      const email = String(body.email || "").trim().toLowerCase();
+      const requestedEmail = String(body.email || "").trim().toLowerCase();
       const nombre = String(body.nombre || "").trim();
       const password = String(body.password || "");
       const rol = normalizeRole(body.rol);
+      const email = requestedEmail || buildInternalEmail(nombre);
 
       if (!email || !password || !rol) {
-        return json({ error: "Email, contrasena y rol son obligatorios." }, 400);
+        return json({ error: "Nombre de usuario, contrasena y rol son obligatorios." }, 400);
       }
 
       if (password.length < 6) {
@@ -158,6 +186,7 @@ Deno.serve(async (req) => {
           name: nombre,
           full_name: nombre,
           rol,
+          uses_internal_email: !requestedEmail,
         },
       });
 

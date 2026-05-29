@@ -27,9 +27,9 @@
             <input
               id="email"
               name="email"
-              type="email"
+              type="text"
               autocomplete="username"
-              placeholder="tripulante@pequod02"
+              placeholder="usuario o email"
               required
             >
           </div>
@@ -55,6 +55,34 @@
           <span class="google-mark" aria-hidden="true">G</span>
           Entrar con Google
         </button>
+      </section>
+    </main>
+
+    <main id="profile-view" class="auth-view" hidden>
+      <section class="login-card" aria-labelledby="profile-title">
+        <div class="compass" aria-hidden="true">
+          <span></span>
+        </div>
+
+        <p class="overline">Completar perfil</p>
+        <h1 id="profile-title">Pequod02</h1>
+        <p class="login-copy">Añade tu email para terminar la configuración de la cuenta.</p>
+
+        <form id="profile-form" class="login-form">
+          <div class="field">
+            <label for="profile-name">Nombre</label>
+            <input id="profile-name" name="nombre" type="text" autocomplete="name" placeholder="Nombre visible">
+          </div>
+
+          <div class="field">
+            <label for="profile-email">Email</label>
+            <input id="profile-email" name="email" type="email" autocomplete="email" placeholder="tripulante@pequod02.com" required>
+          </div>
+
+          <p id="profile-message" class="auth-message" role="status" aria-live="polite"></p>
+          <button id="profile-button" class="primary-button" type="submit">Guardar perfil</button>
+          <button id="profile-logout-button" class="ghost-button full-button" type="button">Salir</button>
+        </form>
       </section>
     </main>
 

@@ -107,10 +107,13 @@ function renderUsers(users) {
     const saveButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
-    emailCell.textContent = user.email;
+    emailCell.textContent = user.email || "Pendiente";
+    if (!user.email) {
+      emailCell.className = "muted-cell";
+    }
     nameCell.textContent = user.nombre || "";
     createdCell.textContent = formatDate(user.created_at);
-    roleSelect.setAttribute("aria-label", `Rol de ${user.email}`);
+    roleSelect.setAttribute("aria-label", `Rol de ${user.email || user.nombre || user.username}`);
 
     for (const role of ["tripulante", "patron", "admin"]) {
       const option = document.createElement("option");
@@ -140,7 +143,8 @@ function renderUsers(users) {
     });
 
     deleteButton.addEventListener("click", async () => {
-      const confirmed = window.confirm(`Dar de baja a ${user.email}? Se eliminara de Supabase Auth.`);
+      const label = user.email || user.nombre || user.username;
+      const confirmed = window.confirm(`Dar de baja a ${label}? Se eliminara de Supabase Auth.`);
 
       if (confirmed) {
         await deleteUser(user.id);

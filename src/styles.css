@@ -220,6 +220,16 @@ select:focus {
   font-size: 14px;
 }
 
+.auth-message[data-state="ok"] {
+  color: var(--mist);
+}
+
+.field-hint {
+  margin: -2px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+}
+
 .primary-button,
 .ghost-button,
 .ghost-link,
@@ -277,6 +287,10 @@ select:focus {
 .google-button:hover {
   border-color: var(--gold);
   background: rgba(255, 255, 255, 0.13);
+}
+
+.full-button {
+  width: 100%;
 }
 
 .google-mark {
@@ -528,6 +542,11 @@ th {
 
 td {
   color: var(--mist);
+}
+
+.muted-cell {
+  color: rgba(255, 255, 255, 0.56);
+  font-style: italic;
 }
 
 td select {

@@ -59,6 +59,12 @@ supabase/functions/admin-users/index.ts
 
 La funcion usa la Supabase Admin API con `SERVICE_ROLE_KEY`, verifica primero que la sesion llamante tenga rol `admin` en `public.profiles` y despues sincroniza `auth.users` con `public.profiles`. La clave `service_role` debe configurarse como secreto de la Edge Function; no debe publicarse en `src/config.js` ni en GitHub Pages.
 
+Si el admin crea un usuario sin email, la funcion genera un email interno `usuario@pequod02.local` para Supabase Auth. Ese email no se muestra en el panel; el usuario puede entrar con su nombre de usuario y completar el email real en el primer login. Para bases ya migradas, aplica tambien:
+
+```text
+supabase/migrations/202605292309_optional_email_profile.sql
+```
+
 Despliegue de la funcion:
 
 ```bash
