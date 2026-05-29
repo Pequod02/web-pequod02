@@ -7,11 +7,13 @@ const authView = document.querySelector("#auth-view");
 const dashboardView = document.querySelector("#dashboard-view");
 const loginForm = document.querySelector("#login-form");
 const loginButton = document.querySelector("#login-button");
+const googleLoginButton = document.querySelector("#google-login-button");
 const logoutButton = document.querySelector("#logout-button");
 const authMessage = document.querySelector("#auth-message");
 
 function setLoading(isLoading) {
   loginButton.disabled = isLoading;
+  googleLoginButton.disabled = isLoading;
   loginButton.textContent = isLoading ? "Entrando..." : "Entrar";
 }
 
@@ -59,6 +61,24 @@ loginForm.addEventListener("submit", async (event) => {
 
   loginForm.reset();
   showDashboard(data.session);
+});
+
+googleLoginButton.addEventListener("click", async () => {
+  showError("");
+  setLoading(true);
+
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin + window.location.pathname,
+    },
+  });
+
+  setLoading(false);
+
+  if (error) {
+    showError("No se pudo iniciar sesión con Google.");
+  }
 });
 
 logoutButton.addEventListener("click", async () => {

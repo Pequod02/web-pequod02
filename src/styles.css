@@ -10,6 +10,7 @@
   --line: rgba(255, 255, 255, 0.2);
   --shadow: rgba(2, 8, 18, 0.42);
   --error: #ffb7a8;
+  --ink: #08111f;
 }
 
 * {
@@ -89,7 +90,7 @@ button {
   position: relative;
   z-index: 1;
   width: min(100%, 430px);
-  padding: 42px;
+  padding: 42px 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(10, 22, 40, 0.84);
@@ -145,7 +146,8 @@ button {
 }
 
 .login-card .overline,
-.login-card h1 {
+.login-card h1,
+.login-copy {
   text-align: center;
 }
 
@@ -156,10 +158,16 @@ p {
 }
 
 h1 {
-  margin-bottom: 30px;
+  margin-bottom: 12px;
   font-size: 46px;
   line-height: 1.04;
   letter-spacing: 0;
+}
+
+.login-copy {
+  margin: 0 0 28px;
+  color: var(--mist);
+  font-size: 15px;
 }
 
 .login-form {
@@ -206,7 +214,8 @@ input:focus {
 }
 
 .primary-button,
-.ghost-button {
+.ghost-button,
+.google-button {
   min-height: 50px;
   border-radius: 6px;
   font-weight: 850;
@@ -223,9 +232,55 @@ input:focus {
 }
 
 .primary-button:disabled,
-.ghost-button:disabled {
+.ghost-button:disabled,
+.google-button:disabled {
   cursor: wait;
   opacity: 0.62;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  flex: 1;
+  height: 1px;
+  content: "";
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.google-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.google-button:hover {
+  border-color: var(--gold);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.google-mark {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .dashboard-view {
