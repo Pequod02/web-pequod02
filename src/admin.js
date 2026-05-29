@@ -3,6 +3,8 @@ const supabaseClient = window.supabase.createClient(
   window.PEQUOD02_SUPABASE.anonKey,
 );
 
+const adminUsersUrl = `${window.PEQUOD02_SUPABASE.url}/functions/v1/admin-users`;
+
 const gate = document.querySelector("#admin-gate");
 const adminPanel = document.querySelector("#admin-panel");
 const logoutButton = document.querySelector("#logout-button");
@@ -30,14 +32,65 @@ function setMessage(element, message, isError = false) {
   element.dataset.state = isError ? "error" : "ok";
 }
 
+function formatDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return new Date(value).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+async function getAccessToken() {
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error || !data.session) {
+    throw new Error("Sesion requerida.");
+  }
+
+  return data.session.access_token;
+}
+
+async function adminUsersRequest(method, payload = null) {
+  const token = await getAccessToken();
+  const options = {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: window.PEQUOD02_SUPABASE.anonKey,
+      "Content-Type": "application/json",
+    },
+  };
+
+  let url = adminUsersUrl;
+
+  if (payload && method === "DELETE") {
+    url = `${adminUsersUrl}?id=${encodeURIComponent(payload.id)}`;
+  } else if (payload) {
+    options.body = JSON.stringify(payload);
+  }
+
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "No se pudo completar la operacion.");
+  }
+
+  return data;
+}
+
 function renderUsers(users) {
   usersTable.innerHTML = "";
 
   if (!users.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 4;
-    cell.textContent = "No hay usuarios visibles.";
+    cell.colSpan = 5;
+    cell.textContent = "No hay usuarios registrados.";
     row.append(cell);
     usersTable.append(row);
     return;
@@ -48,13 +101,15 @@ function renderUsers(users) {
     const emailCell = document.createElement("td");
     const nameCell = document.createElement("td");
     const roleCell = document.createElement("td");
+    const createdCell = document.createElement("td");
     const actionsCell = document.createElement("td");
     const roleSelect = document.createElement("select");
-    const editButton = document.createElement("button");
+    const saveButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
     emailCell.textContent = user.email;
     nameCell.textContent = user.nombre || "";
+    createdCell.textContent = formatDate(user.created_at);
     roleSelect.setAttribute("aria-label", `Rol de ${user.email}`);
 
     for (const role of ["tripulante", "patron", "admin"]) {
@@ -65,22 +120,19 @@ function renderUsers(users) {
       roleSelect.append(option);
     }
 
-    editButton.className = "text-button";
-    editButton.type = "button";
-    editButton.textContent = "Editar";
+    saveButton.className = "text-button";
+    saveButton.type = "button";
+    saveButton.textContent = "Guardar";
     deleteButton.className = "text-button danger";
     deleteButton.type = "button";
     deleteButton.textContent = "Baja";
 
     roleCell.append(roleSelect);
-    actionsCell.append(editButton, deleteButton);
-    row.append(emailCell, nameCell, roleCell, actionsCell);
+    actionsCell.append(saveButton, deleteButton);
+    row.append(emailCell, nameCell, roleCell, createdCell, actionsCell);
 
-    editButton.addEventListener("click", () => {
-      userForm.elements.id.value = user.id;
-      userForm.elements.email.value = user.email;
-      userForm.elements.nombre.value = user.nombre || "";
-      userForm.elements.rol.value = roleSelect.value;
+    saveButton.addEventListener("click", async () => {
+      await updateUserRole(user.id, roleSelect.value);
     });
 
     roleSelect.addEventListener("change", async (event) => {
@@ -88,7 +140,11 @@ function renderUsers(users) {
     });
 
     deleteButton.addEventListener("click", async () => {
-      await deleteUserProfile(user.id);
+      const confirmed = window.confirm(`Dar de baja a ${user.email}? Se eliminara de Supabase Auth.`);
+
+      if (confirmed) {
+        await deleteUser(user.id);
+      }
     });
 
     usersTable.append(row);
@@ -157,48 +213,33 @@ async function loadStats() {
 }
 
 async function loadUsers() {
-  const { data, error } = await supabaseClient
-    .from("profiles")
-    .select("id,email,nombre,rol,created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    setMessage(userMessage, "No se pudieron cargar usuarios.", true);
-    return;
+  try {
+    const { users } = await adminUsersRequest("GET");
+    renderUsers(users || []);
+  } catch (error) {
+    setMessage(userMessage, error.message || "No se pudieron cargar usuarios.", true);
   }
-
-  renderUsers(data || []);
 }
 
 async function updateUserRole(id, rol) {
-  const { error } = await supabaseClient
-    .from("profiles")
-    .update({ rol })
-    .eq("id", id);
-
-  if (error) {
-    setMessage(userMessage, "No se pudo actualizar el rol.", true);
+  try {
+    await adminUsersRequest("PATCH", { id, rol });
+    setMessage(userMessage, "Rol actualizado.");
+    await Promise.all([loadUsers(), loadStats()]);
+  } catch (error) {
+    setMessage(userMessage, error.message || "No se pudo actualizar el rol.", true);
     await loadUsers();
-    return;
   }
-
-  setMessage(userMessage, "Rol actualizado.");
-  await loadStats();
 }
 
-async function deleteUserProfile(id) {
-  const { error } = await supabaseClient
-    .from("profiles")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    setMessage(userMessage, "No se pudo dar de baja el perfil.", true);
-    return;
+async function deleteUser(id) {
+  try {
+    await adminUsersRequest("DELETE", { id });
+    setMessage(userMessage, "Usuario dado de baja.");
+    await Promise.all([loadUsers(), loadStats()]);
+  } catch (error) {
+    setMessage(userMessage, error.message || "No se pudo dar de baja el usuario.", true);
   }
-
-  setMessage(userMessage, "Perfil dado de baja.");
-  await Promise.all([loadUsers(), loadStats()]);
 }
 
 async function loadFiles() {
@@ -219,25 +260,21 @@ userForm.addEventListener("submit", async (event) => {
   setMessage(userMessage, "");
 
   const formData = new FormData(userForm);
-  const profile = {
-    id: String(formData.get("id") || "").trim(),
+  const user = {
     email: String(formData.get("email") || "").trim(),
-    nombre: String(formData.get("nombre") || "").trim() || null,
+    nombre: String(formData.get("nombre") || "").trim(),
+    password: String(formData.get("password") || ""),
     rol: String(formData.get("rol") || "tripulante"),
   };
 
-  const { error } = await supabaseClient
-    .from("profiles")
-    .upsert(profile, { onConflict: "id" });
-
-  if (error) {
-    setMessage(userMessage, "No se pudo guardar el usuario. Comprueba que el ID existe en Auth.", true);
-    return;
+  try {
+    await adminUsersRequest("POST", user);
+    userForm.reset();
+    setMessage(userMessage, "Usuario creado en Auth y profiles.");
+    await Promise.all([loadUsers(), loadStats()]);
+  } catch (error) {
+    setMessage(userMessage, error.message || "No se pudo crear el usuario.", true);
   }
-
-  userForm.reset();
-  setMessage(userMessage, "Usuario guardado.");
-  await Promise.all([loadUsers(), loadStats()]);
 });
 
 uploadForm.addEventListener("submit", async (event) => {

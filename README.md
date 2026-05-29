@@ -51,7 +51,20 @@ set rol = 'admin'
 where email = 'admin@pequod02.com';
 ```
 
-El alta/baja del panel administra perfiles y roles en `public.profiles`. La creacion o eliminacion real de usuarios de Supabase Auth requiere el panel de Supabase, una Edge Function con `service_role` o un backend privado; no debe hacerse desde el navegador con la clave anonima.
+El panel de administracion crea, lista, edita roles y da de baja usuarios reales de Supabase Auth mediante la Edge Function:
+
+```text
+supabase/functions/admin-users/index.ts
+```
+
+La funcion usa la Supabase Admin API con `SUPABASE_SERVICE_ROLE_KEY`, verifica primero que la sesion llamante tenga rol `admin` en `public.profiles` y despues sincroniza `auth.users` con `public.profiles`. La clave `service_role` debe configurarse como secreto de la Edge Function; no debe publicarse en `src/config.js` ni en GitHub Pages.
+
+Despliegue de la funcion:
+
+```bash
+supabase functions deploy admin-users
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+```
 
 ## Notas
 

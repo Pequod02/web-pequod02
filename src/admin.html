@@ -59,16 +59,16 @@
 
             <form id="user-form" class="admin-form">
               <div class="form-row">
-                <label for="user-id">ID Auth</label>
-                <input id="user-id" name="id" type="text" placeholder="uuid del usuario" required>
-              </div>
-              <div class="form-row">
                 <label for="user-email">Email</label>
                 <input id="user-email" name="email" type="email" placeholder="tripulante@pequod02.com" required>
               </div>
               <div class="form-row">
                 <label for="user-name">Nombre</label>
                 <input id="user-name" name="nombre" type="text" placeholder="Nombre visible">
+              </div>
+              <div class="form-row">
+                <label for="user-password">Contraseña</label>
+                <input id="user-password" name="password" type="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
               </div>
               <div class="form-row">
                 <label for="user-role">Rol</label>
@@ -78,7 +78,7 @@
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <button class="primary-button" type="submit">Guardar usuario</button>
+              <button class="primary-button" type="submit">Crear usuario</button>
               <p id="user-message" class="inline-message" role="status" aria-live="polite"></p>
             </form>
 
@@ -89,6 +89,7 @@
                     <th>Email</th>
                     <th>Nombre</th>
                     <th>Rol</th>
+                    <th>Alta</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
