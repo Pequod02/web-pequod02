@@ -1,5 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+console.info("[admin-users] module loaded");
+
+addEventListener("error", (event) => {
+  console.error("[admin-users] uncaught error", event.error?.message || event.message);
+});
+
+addEventListener("unhandledrejection", (event) => {
+  console.error("[admin-users] unhandled rejection", event.reason?.message || event.reason);
+});
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -8,6 +18,7 @@ const corsHeaders = {
 
 const roles = new Set(["admin", "patron", "tripulante"]);
 const internalEmailDomain = "pequod02.local";
+type SupabaseAdminClient = ReturnType<typeof createClient>;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -17,6 +28,10 @@ function json(body: unknown, status = 200) {
       "Content-Type": "application/json",
     },
   });
+}
+
+function logError(scope: string, error: unknown) {
+  console.error(`[admin-users] ${scope}`, error instanceof Error ? error.message : error);
 }
 
 function getBearerToken(req: Request) {
@@ -59,10 +74,46 @@ function publicEmail(email: string) {
   return isInternalEmail(email) ? "" : email;
 }
 
-async function requireAdmin(req: Request, supabaseAdmin: ReturnType<typeof createClient>) {
+function createSupabaseAdminClient() {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+
+  console.info("[admin-users] env check", {
+    hasSupabaseUrl: Boolean(supabaseUrl),
+    hasServiceRoleKey: Boolean(serviceRoleKey),
+    serviceRoleKeyLength: serviceRoleKey?.length || 0,
+  });
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Faltan variables SUPABASE_URL o SERVICE_ROLE_KEY.");
+  }
+
+  try {
+    const client = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      global: {
+        headers: {
+          "X-Client-Info": "pequod02-admin-users",
+        },
+      },
+    });
+
+    console.info("[admin-users] Supabase Admin client initialized");
+    return client;
+  } catch (error) {
+    logError("Supabase Admin client initialization failed", error);
+    throw error;
+  }
+}
+
+async function requireAdmin(req: Request, supabaseAdmin: SupabaseAdminClient) {
   const token = getBearerToken(req);
 
   if (!token) {
+    console.warn("[admin-users] missing bearer token");
     return { error: json({ error: "Sesion requerida." }, 401) };
   }
 
@@ -70,6 +121,7 @@ async function requireAdmin(req: Request, supabaseAdmin: ReturnType<typeof creat
   const user = userData.user;
 
   if (userError || !user) {
+    logError("session validation failed", userError || "User not found");
     return { error: json({ error: "Sesion no valida." }, 401) };
   }
 
@@ -80,13 +132,15 @@ async function requireAdmin(req: Request, supabaseAdmin: ReturnType<typeof creat
     .single();
 
   if (profileError || profile?.rol !== "admin") {
+    logError("admin profile validation failed", profileError || `Rol actual: ${profile?.rol || "sin perfil"}`);
     return { error: json({ error: "Acceso restringido a administradores." }, 403) };
   }
 
+  console.info("[admin-users] admin session validated", { userId: user.id });
   return { user };
 }
 
-async function listAllAuthUsers(supabaseAdmin: ReturnType<typeof createClient>) {
+async function listAllAuthUsers(supabaseAdmin: SupabaseAdminClient) {
   const users = [];
   const perPage = 1000;
 
@@ -108,23 +162,23 @@ async function listAllAuthUsers(supabaseAdmin: ReturnType<typeof createClient>) 
 }
 
 Deno.serve(async (req) => {
+  console.info("[admin-users] request received", {
+    method: req.method,
+    path: new URL(req.url).pathname,
+  });
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+  let supabaseAdmin: SupabaseAdminClient;
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json({ error: "Faltan variables SUPABASE_URL o SERVICE_ROLE_KEY." }, 500);
+  try {
+    supabaseAdmin = createSupabaseAdminClient();
+  } catch (error) {
+    logError("startup failed", error);
+    return json({ error: error instanceof Error ? error.message : "Error inicializando Supabase Admin." }, 500);
   }
-
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
 
   const adminResult = await requireAdmin(req, supabaseAdmin);
   if ("error" in adminResult) {
@@ -133,6 +187,7 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method === "GET") {
+      console.info("[admin-users] listing users");
       const [authUsers, profilesResult] = await Promise.all([
         listAllAuthUsers(supabaseAdmin),
         supabaseAdmin.from("profiles").select("id,email,nombre,rol,created_at"),
@@ -163,6 +218,7 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
+      console.info("[admin-users] creating user");
       const body = await req.json();
       const requestedEmail = String(body.email || "").trim().toLowerCase();
       const nombre = String(body.nombre || "").trim();
@@ -191,6 +247,7 @@ Deno.serve(async (req) => {
       });
 
       if (createError || !created.user) {
+        logError("auth user creation failed", createError || "No user returned");
         throw createError || new Error("No se pudo crear el usuario.");
       }
 
@@ -206,6 +263,7 @@ Deno.serve(async (req) => {
         .upsert(profile, { onConflict: "id" });
 
       if (profileError) {
+        logError("profile upsert failed after user creation", profileError);
         await supabaseAdmin.auth.admin.deleteUser(created.user.id);
         throw profileError;
       }
@@ -214,6 +272,7 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "PATCH") {
+      console.info("[admin-users] updating user role");
       const body = await req.json();
       const id = String(body.id || "").trim();
       const rol = normalizeRole(body.rol);
@@ -225,6 +284,7 @@ Deno.serve(async (req) => {
       const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id);
 
       if (getUserError || !authUser.user) {
+        logError("auth user read failed", getUserError || "No user returned");
         throw getUserError || new Error("No se pudo leer el usuario.");
       }
 
@@ -236,6 +296,7 @@ Deno.serve(async (req) => {
       });
 
       if (updateAuthError) {
+        logError("auth user role update failed", updateAuthError);
         throw updateAuthError;
       }
 
@@ -251,6 +312,7 @@ Deno.serve(async (req) => {
         );
 
       if (updateProfileError) {
+        logError("profile role update failed", updateProfileError);
         throw updateProfileError;
       }
 
@@ -258,6 +320,7 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "DELETE") {
+      console.info("[admin-users] deleting user");
       const url = new URL(req.url);
       const id = url.searchParams.get("id") || String((await req.json().catch(() => ({}))).id || "");
 
@@ -272,6 +335,7 @@ Deno.serve(async (req) => {
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
       if (deleteError) {
+        logError("auth user deletion failed", deleteError);
         throw deleteError;
       }
 
@@ -280,6 +344,7 @@ Deno.serve(async (req) => {
 
     return json({ error: "Metodo no permitido." }, 405);
   } catch (error) {
+    logError("request failed", error);
     return json({ error: error instanceof Error ? error.message : "Error inesperado." }, 500);
   }
 });
