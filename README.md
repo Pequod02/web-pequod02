@@ -57,13 +57,13 @@ El panel de administracion crea, lista, edita roles y da de baja usuarios reales
 supabase/functions/admin-users/index.ts
 ```
 
-La funcion usa la Supabase Admin API con `SUPABASE_SERVICE_ROLE_KEY`, verifica primero que la sesion llamante tenga rol `admin` en `public.profiles` y despues sincroniza `auth.users` con `public.profiles`. La clave `service_role` debe configurarse como secreto de la Edge Function; no debe publicarse en `src/config.js` ni en GitHub Pages.
+La funcion usa la Supabase Admin API con `SERVICE_ROLE_KEY`, verifica primero que la sesion llamante tenga rol `admin` en `public.profiles` y despues sincroniza `auth.users` con `public.profiles`. La clave `service_role` debe configurarse como secreto de la Edge Function; no debe publicarse en `src/config.js` ni en GitHub Pages.
 
 Despliegue de la funcion:
 
 ```bash
 supabase functions deploy admin-users
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+supabase secrets set SERVICE_ROLE_KEY=tu_service_role_key
 ```
 
 ## Notas

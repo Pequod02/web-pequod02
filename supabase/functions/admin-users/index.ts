@@ -88,10 +88,10 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
-    return json({ error: "Faltan variables SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY." }, 500);
+    return json({ error: "Faltan variables SUPABASE_URL o SERVICE_ROLE_KEY." }, 500);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
