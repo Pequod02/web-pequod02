@@ -87,7 +87,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if public.current_user_is_admin() then
+  if auth.role() = 'service_role' or public.current_user_is_admin() then
     return new;
   end if;
 

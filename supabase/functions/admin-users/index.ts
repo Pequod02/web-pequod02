@@ -109,7 +109,7 @@ function createSupabaseAdminClient() {
   }
 }
 
-async function requireAdmin(req: Request, supabaseAdmin: SupabaseAdminClient) {
+async function requireAdmin(req: Request, serviceRoleClient: SupabaseAdminClient) {
   const token = getBearerToken(req);
 
   if (!token) {
@@ -117,7 +117,7 @@ async function requireAdmin(req: Request, supabaseAdmin: SupabaseAdminClient) {
     return { error: json({ error: "Sesion requerida." }, 401) };
   }
 
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  const { data: userData, error: userError } = await serviceRoleClient.auth.getUser(token);
   const user = userData.user;
 
   if (userError || !user) {
@@ -125,7 +125,7 @@ async function requireAdmin(req: Request, supabaseAdmin: SupabaseAdminClient) {
     return { error: json({ error: "Sesion no valida." }, 401) };
   }
 
-  const { data: profile, error: profileError } = await supabaseAdmin
+  const { data: profile, error: profileError } = await serviceRoleClient
     .from("profiles")
     .select("rol")
     .eq("id", user.id)
@@ -140,12 +140,12 @@ async function requireAdmin(req: Request, supabaseAdmin: SupabaseAdminClient) {
   return { user };
 }
 
-async function listAllAuthUsers(supabaseAdmin: SupabaseAdminClient) {
+async function listAllAuthUsers(serviceRoleClient: SupabaseAdminClient) {
   const users = [];
   const perPage = 1000;
 
   for (let page = 1; page <= 10; page += 1) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    const { data, error } = await serviceRoleClient.auth.admin.listUsers({ page, perPage });
 
     if (error) {
       throw error;
@@ -171,16 +171,16 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  let supabaseAdmin: SupabaseAdminClient;
+  let serviceRoleClient: SupabaseAdminClient;
 
   try {
-    supabaseAdmin = createSupabaseAdminClient();
+    serviceRoleClient = createSupabaseAdminClient();
   } catch (error) {
     logError("startup failed", error);
     return json({ error: error instanceof Error ? error.message : "Error inicializando Supabase Admin." }, 500);
   }
 
-  const adminResult = await requireAdmin(req, supabaseAdmin);
+  const adminResult = await requireAdmin(req, serviceRoleClient);
   if ("error" in adminResult) {
     return adminResult.error;
   }
@@ -189,8 +189,8 @@ Deno.serve(async (req) => {
     if (req.method === "GET") {
       console.info("[admin-users] listing users");
       const [authUsers, profilesResult] = await Promise.all([
-        listAllAuthUsers(supabaseAdmin),
-        supabaseAdmin.from("profiles").select("id,email,nombre,rol,created_at"),
+        listAllAuthUsers(serviceRoleClient),
+        serviceRoleClient.from("profiles").select("id,email,nombre,rol,created_at"),
       ]);
 
       if (profilesResult.error) {
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
         return json({ error: "La contrasena debe tener al menos 6 caracteres." }, 400);
       }
 
-      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: created, error: createError } = await serviceRoleClient.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -258,13 +258,13 @@ Deno.serve(async (req) => {
         rol,
       };
 
-      const { error: profileError } = await supabaseAdmin
+      const { error: profileError } = await serviceRoleClient
         .from("profiles")
         .upsert(profile, { onConflict: "id" });
 
       if (profileError) {
         logError("profile upsert failed after user creation", profileError);
-        await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+        await serviceRoleClient.auth.admin.deleteUser(created.user.id);
         throw profileError;
       }
 
@@ -281,14 +281,14 @@ Deno.serve(async (req) => {
         return json({ error: "ID y rol son obligatorios." }, 400);
       }
 
-      const { data: authUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(id);
+      const { data: authUser, error: getUserError } = await serviceRoleClient.auth.admin.getUserById(id);
 
       if (getUserError || !authUser.user) {
         logError("auth user read failed", getUserError || "No user returned");
         throw getUserError || new Error("No se pudo leer el usuario.");
       }
 
-      const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+      const { error: updateAuthError } = await serviceRoleClient.auth.admin.updateUserById(id, {
         user_metadata: {
           ...authUser.user.user_metadata,
           rol,
@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
         throw updateAuthError;
       }
 
-      const { error: updateProfileError } = await supabaseAdmin
+      const { error: updateProfileError } = await serviceRoleClient
         .from("profiles")
         .upsert(
           {
@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
         return json({ error: "No puedes darte de baja a ti mismo desde este panel." }, 400);
       }
 
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+      const { error: deleteError } = await serviceRoleClient.auth.admin.deleteUser(id);
 
       if (deleteError) {
         logError("auth user deletion failed", deleteError);
