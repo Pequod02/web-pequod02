@@ -84,6 +84,26 @@ async function showDashboard(session) {
   adminLink.hidden = data?.rol !== "admin";
 }
 
+async function showDashboardWithoutProfilePrompt(session) {
+  if (!session) {
+    await showDashboard(null);
+    return;
+  }
+
+  skipProfilePrompt = true;
+  authView.hidden = true;
+  profileView.hidden = true;
+  dashboardView.hidden = false;
+
+  const { data } = await supabaseClient
+    .from("profiles")
+    .select("rol")
+    .eq("id", session.user.id)
+    .single();
+
+  adminLink.hidden = data?.rol !== "admin";
+}
+
 function showError(message) {
   authMessage.textContent = message || "";
 }
@@ -222,10 +242,10 @@ logoutButton.addEventListener("click", async () => {
   await showDashboard(null);
 });
 
-profileSkipButton.addEventListener("click", async () => {
-  skipProfilePrompt = true;
+profileSkipButton.addEventListener("click", async (event) => {
+  event.preventDefault();
   const { data } = await supabaseClient.auth.getSession();
-  await showDashboard(data.session);
+  await showDashboardWithoutProfilePrompt(data.session);
 });
 
 profileLogoutButton.addEventListener("click", async () => {
