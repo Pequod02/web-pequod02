@@ -60,6 +60,7 @@ async function adminUsersRequest(method, payload = null) {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
+      Accept: "application/json",
       apikey: window.PEQUOD02_SUPABASE.anonKey,
       "Content-Type": "application/json",
     },

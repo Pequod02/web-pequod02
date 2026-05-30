@@ -385,23 +385,19 @@ Deno.serve(async (req) => {
         throw updateAuthError;
       }
 
-      const { error: updateProfileError } = await serviceRoleClient
+      const { data: updatedProfile, error: updateProfileError } = await serviceRoleClient
         .from("profiles")
-        .upsert(
-          {
-            id,
-            email: authUser.user.email || "",
-            rol,
-          },
-          { onConflict: "id" },
-        );
+        .update({ rol })
+        .eq("id", id)
+        .select("id,email,nombre,rol,created_at")
+        .single();
 
       if (updateProfileError) {
         logError("profile role update failed", updateProfileError);
         throw updateProfileError;
       }
 
-      return json({ ok: true });
+      return json({ ok: true, user: updatedProfile });
     }
 
     if (req.method === "DELETE") {
