@@ -140,6 +140,25 @@ async function requireAdmin(req: Request, serviceRoleClient: SupabaseAdminClient
   return { user };
 }
 
+async function requireUser(req: Request, serviceRoleClient: SupabaseAdminClient) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    console.warn("[admin-users] missing bearer token");
+    return { error: json({ error: "Sesion requerida." }, 401) };
+  }
+
+  const { data: userData, error: userError } = await serviceRoleClient.auth.getUser(token);
+  const user = userData.user;
+
+  if (userError || !user) {
+    logError("session validation failed", userError || "User not found");
+    return { error: json({ error: "Sesion no valida." }, 401) };
+  }
+
+  return { user };
+}
+
 async function listAllAuthUsers(serviceRoleClient: SupabaseAdminClient) {
   const users = [];
   const perPage = 1000;
@@ -162,9 +181,11 @@ async function listAllAuthUsers(serviceRoleClient: SupabaseAdminClient) {
 }
 
 Deno.serve(async (req) => {
+  const requestPath = new URL(req.url).pathname;
+
   console.info("[admin-users] request received", {
     method: req.method,
-    path: new URL(req.url).pathname,
+    path: requestPath,
   });
 
   if (req.method === "OPTIONS") {
@@ -178,6 +199,70 @@ Deno.serve(async (req) => {
   } catch (error) {
     logError("startup failed", error);
     return json({ error: error instanceof Error ? error.message : "Error inicializando Supabase Admin." }, 500);
+  }
+
+  if (requestPath.endsWith("/complete-profile")) {
+    if (req.method !== "POST") {
+      return json({ error: "Metodo no permitido." }, 405);
+    }
+
+    const userResult = await requireUser(req, serviceRoleClient);
+    if ("error" in userResult) {
+      return userResult.error;
+    }
+
+    try {
+      console.info("[admin-users] completing own profile", { userId: userResult.user.id });
+
+      const body = await req.json();
+      const email = String(body.email || "").trim().toLowerCase();
+      const nombre = String(body.nombre || "").trim();
+
+      if (
+        !email ||
+        isInternalEmail(email) ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ) {
+        return json({ error: "Email no valido." }, 400);
+      }
+
+      const { error: updateAuthError } = await serviceRoleClient.auth.admin.updateUserById(userResult.user.id, {
+        email,
+        email_confirm: true,
+        user_metadata: {
+          ...userResult.user.user_metadata,
+          name: nombre,
+          full_name: nombre,
+          uses_internal_email: false,
+        },
+      });
+
+      if (updateAuthError) {
+        logError("auth email update failed", updateAuthError);
+        throw updateAuthError;
+      }
+
+      const { error: profileError } = await serviceRoleClient
+        .from("profiles")
+        .upsert(
+          {
+            id: userResult.user.id,
+            email,
+            nombre: nombre || null,
+          },
+          { onConflict: "id" },
+        );
+
+      if (profileError) {
+        logError("profile email update failed", profileError);
+        throw profileError;
+      }
+
+      return json({ ok: true });
+    } catch (error) {
+      logError("complete profile failed", error);
+      return json({ error: error instanceof Error ? error.message : "No se pudo guardar el perfil." }, 500);
+    }
   }
 
   const adminResult = await requireAdmin(req, serviceRoleClient);

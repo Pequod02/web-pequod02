@@ -11,12 +11,15 @@ const loginButton = document.querySelector("#login-button");
 const googleLoginButton = document.querySelector("#google-login-button");
 const profileForm = document.querySelector("#profile-form");
 const profileButton = document.querySelector("#profile-button");
+const profileSkipButton = document.querySelector("#profile-skip-button");
 const profileLogoutButton = document.querySelector("#profile-logout-button");
 const profileMessage = document.querySelector("#profile-message");
 const adminLink = document.querySelector("#admin-link");
 const logoutButton = document.querySelector("#logout-button");
 const authMessage = document.querySelector("#auth-message");
 const internalEmailDomain = "pequod02.local";
+const completeProfileUrl = `${window.PEQUOD02_SUPABASE.url}/functions/v1/admin-users/complete-profile`;
+let skipProfilePrompt = false;
 
 function setLoading(isLoading) {
   loginButton.disabled = isLoading;
@@ -26,6 +29,7 @@ function setLoading(isLoading) {
 
 function setProfileLoading(isLoading) {
   profileButton.disabled = isLoading;
+  profileSkipButton.disabled = isLoading;
   profileLogoutButton.disabled = isLoading;
   profileButton.textContent = isLoading ? "Guardando..." : "Guardar perfil";
 }
@@ -66,7 +70,9 @@ async function showDashboard(session) {
     .eq("id", session.user.id)
     .single();
 
-  if (isInternalEmail(data?.email) || (!data?.email && isInternalEmail(session.user.email))) {
+  const hasPendingEmail = isInternalEmail(data?.email) || (!data?.email && isInternalEmail(session.user.email));
+
+  if (hasPendingEmail && !skipProfilePrompt) {
     authView.hidden = true;
     dashboardView.hidden = true;
     profileView.hidden = false;
@@ -99,6 +105,36 @@ async function loadSession() {
   await showDashboard(data.session);
 }
 
+async function getAccessToken() {
+  const { data, error } = await supabaseClient.auth.getSession();
+
+  if (error || !data.session) {
+    throw new Error("Sesion requerida.");
+  }
+
+  return data.session.access_token;
+}
+
+async function completeProfile(payload) {
+  const token = await getAccessToken();
+  const response = await fetch(completeProfileUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: window.PEQUOD02_SUPABASE.anonKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "No se pudo guardar el perfil.");
+  }
+
+  return data;
+}
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showError("");
@@ -121,6 +157,7 @@ loginForm.addEventListener("submit", async (event) => {
   }
 
   loginForm.reset();
+  skipProfilePrompt = false;
   await showDashboard(data.session);
 });
 
@@ -133,34 +170,28 @@ profileForm.addEventListener("submit", async (event) => {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const nombre = String(formData.get("nombre") || "").trim();
 
-  const { error: authError } = await supabaseClient.auth.updateUser({
-    email,
-    data: {
-      name: nombre,
-      full_name: nombre,
-      uses_internal_email: false,
-    },
-  });
-
-  if (authError) {
+  try {
+    await completeProfile({
+      email,
+      nombre,
+    });
+  } catch (error) {
     setProfileLoading(false);
-    showProfileMessage("No se pudo guardar el email.", true);
+    showProfileMessage(error.message || "No se pudo guardar el email.", true);
     return;
   }
 
-  const { error: profileError } = await supabaseClient.rpc("complete_own_profile", {
-    p_email: email,
-    p_nombre: nombre || null,
-  });
+  skipProfilePrompt = true;
+  const { error: refreshError } = await supabaseClient.auth.refreshSession();
+
+  if (refreshError) {
+    setProfileLoading(false);
+    showProfileMessage("Perfil guardado. Vuelve a iniciar sesión para refrescar la cuenta.", true);
+    return;
+  }
 
   setProfileLoading(false);
-
-  if (profileError) {
-    showProfileMessage("Email actualizado en Auth, pero no se pudo guardar el perfil.", true);
-    return;
-  }
-
-  showProfileMessage("Perfil actualizado. Si Supabase pide confirmación, revisa tu email.");
+  showProfileMessage("Perfil actualizado.");
   const { data } = await supabaseClient.auth.getSession();
   await showDashboard(data.session);
 });
@@ -185,13 +216,21 @@ googleLoginButton.addEventListener("click", async () => {
 
 logoutButton.addEventListener("click", async () => {
   logoutButton.disabled = true;
+  skipProfilePrompt = false;
   await supabaseClient.auth.signOut();
   logoutButton.disabled = false;
   await showDashboard(null);
 });
 
+profileSkipButton.addEventListener("click", async () => {
+  skipProfilePrompt = true;
+  const { data } = await supabaseClient.auth.getSession();
+  await showDashboard(data.session);
+});
+
 profileLogoutButton.addEventListener("click", async () => {
   profileLogoutButton.disabled = true;
+  skipProfilePrompt = false;
   await supabaseClient.auth.signOut();
   profileLogoutButton.disabled = false;
   await showDashboard(null);
