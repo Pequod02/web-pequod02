@@ -34,6 +34,27 @@ function logError(scope: string, error: unknown) {
   console.error(`[admin-users] ${scope}`, error instanceof Error ? error.message : error);
 }
 
+function logSupabaseError(scope: string, error: unknown) {
+  if (error && typeof error === "object") {
+    const supabaseError = error as {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+    };
+
+    console.error(`[admin-users] ${scope}`, {
+      code: supabaseError.code,
+      message: supabaseError.message,
+      details: supabaseError.details,
+      hint: supabaseError.hint,
+    });
+    return;
+  }
+
+  logError(scope, error);
+}
+
 function getBearerToken(req: Request) {
   const header = req.headers.get("Authorization") || "";
   const [type, token] = header.split(" ");
@@ -358,21 +379,37 @@ Deno.serve(async (req) => {
 
     if (req.method === "PATCH") {
       console.info("[admin-users] updating user role");
-      const body = await req.json();
+      const body = await req.json().catch((error) => {
+        logError("patch body parse failed", error);
+        return null;
+      });
+
+      if (!body || typeof body !== "object") {
+        return json({ error: "Body JSON no valido." }, 400);
+      }
+
       const id = String(body.id || "").trim();
       const rol = normalizeRole(body.rol);
+
+      console.info("[admin-users] patch payload", {
+        hasId: Boolean(id),
+        id,
+        rol,
+      });
 
       if (!id || !rol) {
         return json({ error: "ID y rol son obligatorios." }, 400);
       }
 
+      console.info("[admin-users] reading auth user for role update", { id });
       const { data: authUser, error: getUserError } = await serviceRoleClient.auth.admin.getUserById(id);
 
       if (getUserError || !authUser.user) {
-        logError("auth user read failed", getUserError || "No user returned");
+        logSupabaseError("auth user read failed", getUserError || "No user returned");
         throw getUserError || new Error("No se pudo leer el usuario.");
       }
 
+      console.info("[admin-users] updating auth metadata role", { id, rol });
       const { error: updateAuthError } = await serviceRoleClient.auth.admin.updateUserById(id, {
         user_metadata: {
           ...authUser.user.user_metadata,
@@ -381,10 +418,11 @@ Deno.serve(async (req) => {
       });
 
       if (updateAuthError) {
-        logError("auth user role update failed", updateAuthError);
+        logSupabaseError("auth user role update failed", updateAuthError);
         throw updateAuthError;
       }
 
+      console.info("[admin-users] updating profile role with serviceRoleClient", { id, rol });
       const { data: updatedProfile, error: updateProfileError } = await serviceRoleClient
         .from("profiles")
         .update({ rol })
@@ -393,10 +431,11 @@ Deno.serve(async (req) => {
         .single();
 
       if (updateProfileError) {
-        logError("profile role update failed", updateProfileError);
+        logSupabaseError("profile role update failed", updateProfileError);
         throw updateProfileError;
       }
 
+      console.info("[admin-users] profile role updated", { id, rol: updatedProfile.rol });
       return json({ ok: true, user: updatedProfile });
     }
 

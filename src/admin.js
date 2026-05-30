@@ -139,10 +139,6 @@ function renderUsers(users) {
       await updateUserRole(user.id, roleSelect.value);
     });
 
-    roleSelect.addEventListener("change", async (event) => {
-      await updateUserRole(user.id, event.target.value);
-    });
-
     deleteButton.addEventListener("click", async () => {
       const label = user.email || user.nombre || user.username;
       const confirmed = window.confirm(`Dar de baja a ${label}? Se eliminara de Supabase Auth.`);
